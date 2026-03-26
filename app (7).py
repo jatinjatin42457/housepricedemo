@@ -1,7 +1,7 @@
 import streamlit as st
 
 import pandas as pd
-import plotly.express as px
+
 
 # --- 1. SETTINGS & STYLE ---
 st.set_page_config(page_title="Pro Portfolio Tracker", layout="wide", page_icon="📈")
