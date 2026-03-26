@@ -1,7 +1,7 @@
 import streamlit as st
 
 import pandas as pd
-import yfinance as yf
+#import yfinance as yf
 import plotly.express as px
 
 # --- 1. SETTINGS & STYLE ---
