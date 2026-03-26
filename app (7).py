@@ -1,65 +1,50 @@
+# %%writefile app.py
 import streamlit as st
-import pandas as pd
-import numpy as np
-from sklearn.datasets import fetch_california_housing
-from sklearn.linear_model import LinearRegression
-import ssl
 
-# Fix for potential SSL/Download errors in Colab environment
-ssl._create_default_https_context = ssl._create_unverified_context
+# --- 1. PAGE SETUP ---
+st.set_page_config(page_title="Streamlit Calculator", page_icon="🔢")
 
-# --- 1. THE BRAIN (Training logic inside the file) ---
-@st.cache_resource  
-def train_model():
-    # Loading the dataset from Scikit-Learn
-    data = fetch_california_housing()
-    
-    # Selecting 3 key features for the prediction
-    X = pd.DataFrame(data.data, columns=data.feature_names)[['MedInc', 'HouseAge', 'AveRooms']]
-    y = data.target # Target is price in $100k units
-    
-    # Training the Linear Regression model
-    model = LinearRegression()
-    model.fit(X, y)
-    return model
+# Use custom CSS to make it look like a real calculator
 
-# Initialize the model
-model = train_model()
 
-# --- 2. THE FACE (User Interface) ---
-st.set_page_config(page_title="House Predictor", page_icon="🏠")
+st.title("🔢 Python Calculator")
 
-st.title("🏠 California House Price Predictor")
-st.markdown("---")
-st.write("Enter the neighborhood details below to get an instant price estimation.")
+# --- 2. STATE MANAGEMENT ---
+# We use session_state to remember the numbers as you click buttons
+if 'expression' not in st.session_state:
+    st.session_state.expression = ""
 
-# Creating the Input Fields
-col1, col2 = st.columns(2)
+# --- 3. DISPLAY ---
+# Show the current typed expression
+st.markdown(f'<div class="result-box">{st.session_state.expression if st.session_state.expression else "0"}</div>', unsafe_allow_html=True)
 
-with col1:
-    income = st.number_input("Median Income (in $10k)", min_value=0.5, max_value=15.0, value=3.5, step=0.1)
-    rooms = st.number_input("Average Number of Rooms", min_value=1.0, max_value=10.0, value=5.0, step=0.5)
+# --- 4. BUTTON GRID ---
+# Define the layout
+buttons = [
+    ['7', '8', '9', '/'],
+    ['4', '5', '6', '*'],
+    ['1', '2', '3', '-'],
+    ['C', '0', '=', '+']
+]
 
-with col2:
-    age = st.slider("House Age (Years)", 1, 52, 25)
+for row in buttons:
+    cols = st.columns(4)
+    for i, button_text in enumerate(row):
+        if cols[i].button(button_text):
+            if button_text == 'C':
+                st.session_state.expression = ""
+                st.rerun()
+            elif button_text == '=':
+                try:
+                    # eval() performs the math calculation automatically
+                    result = eval(st.session_state.expression)
+                    st.session_state.expression = str(result)
+                except:
+                    st.session_state.expression = "Error"
+                st.rerun()
+            else:
+                # Add the character to our math string
+                st.session_state.expression += button_text
+                st.rerun()
 
-st.markdown("---")
-
-# --- 3. THE PREDICTION ---
-if st.button("Calculate Estimated Price", use_container_width=True):
-    # Prepare the input for the model
-    input_data = np.array([[income, age, rooms]])
-    
-    # Get the prediction
-    prediction = model.predict(input_data)[0]
-    
-    # Convert from $100k units to actual Dollars
-    actual_price = prediction * 100000
-    
-    # Display the result
-    st.metric(label="Predicted Market Value", value=f"${actual_price:,.2f}")
-    
-    if actual_price > 300000:
-        st.success("This is considered a high-value neighborhood.")
-    else:
-        st.info("This is considered an affordable-range neighborhood.")
+st.info("Tip: Click 'C' to clear or use the operators for math.")
