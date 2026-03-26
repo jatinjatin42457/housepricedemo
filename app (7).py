@@ -2,7 +2,26 @@ import streamlit as st
 import pickle
 import numpy as np
 import os
+import pandas as pd
+from sklearn.datasets import fetch_california_housing
+from sklearn.linear_model import LinearRegression
+import pickle
 
+# 1. Load data
+data = fetch_california_housing()
+df = pd.DataFrame(data.data, columns=data.feature_names)
+X = df[['MedInc', 'HouseAge', 'AveRooms']] # Simplified features
+y = data.target # Price in $100k units
+
+# 2. Train Model
+model = LinearRegression()
+model.fit(X, y)
+
+# 3. Save Model to a file
+with open('model.pkl', 'wb') as f:
+    pickle.dump(model, f)
+
+print("Model trained and saved as model.pkl")
 # --- 1. LOAD THE PRE-TRAINED MODEL ---
 # This part stays outside the button so it only runs once
 if os.path.exists('model.pkl'):
