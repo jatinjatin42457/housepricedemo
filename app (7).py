@@ -1,50 +1,79 @@
-# %%writefile app.py
+%%writefile app.py
 import streamlit as st
+import yfinance as yf
+import pandas as pd
+import plotly.express as px
 
-# --- 1. PAGE SETUP ---
-st.set_page_config(page_title="Streamlit Calculator", page_icon="🔢")
+# --- 1. SETTINGS & STYLE ---
+st.set_page_config(page_title="Pro Portfolio", layout="wide")
+st.title("🚀 Python Developer Portfolio Tracker")
 
-# Use custom CSS to make it look like a real calculator
+# Initialize our "database" in memory
+if 'my_assets' not in st.session_state:
+    st.session_state.my_assets = []
 
-
-st.title("🔢 Python Calculator1")
-
-# --- 2. STATE MANAGEMENT ---
-# We use session_state to remember the numbers as you click buttons
-if 'expression' not in st.session_state:
-    st.session_state.expression = ""
-
-# --- 3. DISPLAY ---
-# Show the current typed expression
-st.markdown(f'<div class="result-box">{st.session_state.expression if st.session_state.expression else "0"}</div>', unsafe_allow_html=True)
-
-# --- 4. BUTTON GRID ---
-# Define the layout
-buttons = [
-    ['7', '8', '9', '/'],
-    ['4', '5', '6', '*'],
-    ['1', '2', '3', '-'],
-    ['C', '0', '=', '+']
-]
-
-for row in buttons:
-    cols = st.columns(4)
-    for i, button_text in enumerate(row):
-        if cols[i].button(button_text):
-            if button_text == 'C':
-                st.session_state.expression = ""
-                st.rerun()
-            elif button_text == '=':
-                try:
-                    # eval() performs the math calculation automatically
-                    result = eval(st.session_state.expression)
-                    st.session_state.expression = str(result)
-                except:
-                    st.session_state.expression = "Error"
-                st.rerun()
+# --- 2. USER INPUT AREA (Sidebar) ---
+with st.sidebar:
+    st.header("➕ Add New Asset")
+    symbol = st.text_input("Ticker Symbol", value="AAPL", help="e.g. TSLA, BTC-USD, RELIANCE.NS")
+    quantity = st.number_input("Quantity Owned", min_value=0.01, value=1.0)
+    
+    if st.button("Add to Portfolio"):
+        # Check if the ticker is valid before adding
+        try:
+            test_data = yf.Ticker(symbol).history(period="1d")
+            if not test_data.empty:
+                st.session_state.my_assets.append({"ticker": symbol.upper(), "qty": quantity})
+                st.success(f"Added {symbol.upper()}")
             else:
-                # Add the character to our math string
-                st.session_state.expression += button_text
-                st.rerun()
+                st.error("Invalid Ticker Symbol!")
+        except:
+            st.error("Connection Error!")
 
-st.info("Tip: Click 'C' to clear or use the operators for math.")
+    if st.button("🗑️ Clear All"):
+        st.session_state.my_assets = []
+        st.rerun()
+
+# --- 3. DATA CALCULATION ---
+if st.session_state.my_assets:
+    display_data = []
+    total_portfolio_value = 0
+
+    for item in st.session_state.my_assets:
+        ticker = item['ticker']
+        qty = item['qty']
+        
+        # Fetching Live Price
+        stock = yf.Ticker(ticker)
+        current_price = stock.history(period="1d")['Close'].iloc[-1]
+        market_value = current_price * qty
+        total_portfolio_value += market_value
+        
+        display_data.append({
+            "Asset": ticker,
+            "Quantity": qty,
+            "Live Price ($)": round(current_price, 2),
+            "Total Value ($)": round(market_value, 2)
+        })
+
+    df = pd.DataFrame(display_data)
+
+    # --- 4. THE DASHBOARD ---
+    # Top Stats
+    st.metric(label="Total Net Worth", value=f"${total_portfolio_value:,.2f}")
+
+    # Layout: Table on left, Chart on right
+    col1, col2 = st.columns([3, 2])
+
+    with col1:
+        st.subheader("Current Holdings")
+        st.table(df) # Shows a clean, non-interactive table for summary
+
+    with col2:
+        st.subheader("Asset Allocation")
+        fig = px.pie(df, values='Total Value ($)', names='Asset', hole=0.5,
+                     color_discrete_sequence=px.colors.sequential.RdBu)
+        st.plotly_chart(fig, use_container_width=True)
+
+else:
+    st.warning("No assets added yet. Use the sidebar to add your first stock or crypto!")
