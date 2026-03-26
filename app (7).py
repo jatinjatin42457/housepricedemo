@@ -21,7 +21,7 @@ st.markdown(f'<div class="result-box">{st.session_state.expression if st.session
 # --- 4. BUTTON GRID ---
 # Define the layout
 buttons = [
-    ['7', '8', '9', '/'],
+    ['7', '8', '5', '/'],
     ['4', '5', '6', '*'],
     ['1', '2', '3', '-'],
     ['C', '0', '=', '+']
