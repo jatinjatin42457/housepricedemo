@@ -7,7 +7,7 @@ st.set_page_config(page_title="Streamlit Calculator", page_icon="🔢")
 # Use custom CSS to make it look like a real calculator
 
 
-st.title("🔢 Python Calculator")
+st.title("🔢 Python Calculator1")
 
 # --- 2. STATE MANAGEMENT ---
 # We use session_state to remember the numbers as you click buttons
@@ -21,7 +21,7 @@ st.markdown(f'<div class="result-box">{st.session_state.expression if st.session
 # --- 4. BUTTON GRID ---
 # Define the layout
 buttons = [
-    ['7', '8', '5', '/'],
+    ['7', '8', '9', '/'],
     ['4', '5', '6', '*'],
     ['1', '2', '3', '-'],
     ['C', '0', '=', '+']
